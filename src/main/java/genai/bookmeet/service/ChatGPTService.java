@@ -177,7 +177,7 @@ public class ChatGPTService {
         String book = jsonObject.getString("book");
         String bookType = jsonObject.getString("bookType");
         String character = jsonObject.getString("character");
-        ;
+
         int code = -500;
 
         String systemText = "";
@@ -191,6 +191,83 @@ public class ChatGPTService {
         String userText = text;
 
         // 이전 대화 step2 HISTORY 무조건 넣어야함
+        List<Map<String, String>> previousMessages = new ArrayList<>();
+        previousMessages.add(new HashMap<String, String>() {
+            {
+                put("role", "user");
+                put("content", "DB에서 가져와야함");
+            }
+        });
+        previousMessages.add(new HashMap<String, String>() {
+            {
+                put("role", "assistant");
+                put("content", "DB에서 가져와야함");
+            }
+        });
+
+        String gptRespond = RequestChatGPT(userId, systemText, userText, previousMessages);
+
+        code = 100;
+
+        String input = gptRespond.replace("\n", "").replace("\r", "");
+        String[] parts = input.split("\\d\\) ");
+
+        // parts 배열에는 첫 번째 빈 요소가 생기므로, 이를 제거하고 필요한 문자열 추출
+        String res1 = parts.length > 1 ? parts[1].trim() : "";
+        String res2 = parts.length > 2 ? parts[2].trim() : "";
+        String res3 = parts.length > 3 ? parts[3].trim() : "";
+
+        // TODO 대화내용 DB 저장
+
+        System.out.println("book:" + book);
+        System.out.println("bookType:" + bookType);
+        System.out.println("character:" + character);
+        System.out.println("text:" + gptRespond);
+        System.out.println("res1:" + res1);
+        System.out.println("res2:" + res2);
+        System.out.println("res3:" + res3);
+        System.out.println("code:" + code);
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("book", text);
+        map.put("bookType", bookType);
+        map.put("character", character);
+        map.put("text", gptRespond);
+        map.put("res1", res1);
+        map.put("res2", res2);
+        map.put("res3", res3);
+        map.put("code", code);
+
+        JSONObject j = new JSONObject(map);
+        return j.toString();
+
+    }
+
+    public String getStep4(String json) {
+
+        JSONObject jsonObject = new JSONObject(json);
+        String userId = jsonObject.getString("userId");
+        String text = jsonObject.getString("text");
+        String book = jsonObject.getString("book");
+        String bookType = jsonObject.getString("bookType");
+        String character = jsonObject.getString("character");
+
+        int code = -500;
+
+        String systemText = "";
+        if (bookType.compareTo("문학") == 0) {
+            systemText = String.format(
+                    "이제부터 당신은 %s의 등장인물 %s입니다. 이 역할을 부여받은 순간부터, %s의 관점에서 대답하세요. 또한 언제나 일관된 어투를 사용하세요. 만약 %s의 관점에서 대답하기 어려운 상황이라면, 이해하지 못했으니 다시 입력하라는 의미의 답변을 %s의 어투로 대답하세요.",
+                    book, character, character, character, character);
+        } else { // if (bookType.compareTo("비문학") == 0) {
+            systemText = String.format(
+                    "이제부터 당신은 %s의 저자 %s입니다. 이 역할을 부여받은 순간부터, %s의 관점에서 대답하세요. 또한 언제나 일관된 어투를 사용하세요. 만약 %s의 관점에서 대답하기 어려운 상황이라면, 이해하지 못했으니 다시 입력하라는 의미의 답변을 %s의 어투로 대답하세요.",
+                    book, character, character, character, character);
+        }
+
+        String userText = text;
+
+        // 이전 대화 HISTORY 무조건 넣어야함 ( for 문으로 이전 대화 모두 넣기 )
         List<Map<String, String>> previousMessages = new ArrayList<>();
         previousMessages.add(new HashMap<String, String>() {
             {
