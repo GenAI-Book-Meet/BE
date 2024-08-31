@@ -46,11 +46,10 @@ public class ChatGPTService {
         String userText = text;
         String gptRespond = RequestChatGPT(userId, systemText, userText, new ArrayList<>());
 
-        // TODO 프롬프트 // 대화할 등장인물의 이름이 무엇인가요? 부분을 //문학 으로 변경하면 좀 더 clear 할 것 같음
-        if (gptRespond.compareToIgnoreCase("대화할 등장인물의 이름이 무엇인가요?") == 0) {
+        if (gptRespond.contains("대화할 등장인물의 이름이 무엇인가요?") == true) {
             bookType = "문학";
             code = 100;
-        } else if (gptRespond.compareToIgnoreCase("대화할 등장인물의 이름이 무엇인가요?") == 0) {
+        } else if (gptRespond.contains("대화할 등장인물의 이름이 무엇인가요?") == true) {
             bookType = "비문학";
             code = 100;
         } else {
@@ -99,12 +98,12 @@ public class ChatGPTService {
         String systemText = "";
         if (bookType.compareTo("문학") == 0) {
             systemText = String.format(
-                    "입력된 %s 이름을 확인하고, 그 %s이 %s에 등장하는 인물과 일치하는지 판별합니다. 맞다면 '%s과의 대화를 시작할게요' 라고 답하고, 맞지 않다면 '정확하게 이해하지 못했어요. 다시 말씀해 주실 수 있나요?' 라고 대답합니다. 이 외에 다른 정보는 출력하지 않습니다.",
-                    text, text, book, text);
+                    "입력된 이름을 확인하고, '%s' 에 등장하는 인물인지 판별합니다. 등장하는 인물이라면 '%s 과의 대화를 시작할게요' 라고 답하고, 등장인물이 아니라면 '정확하게 이해하지 못했어요. 다시 말씀해 주실 수 있나요?' 라고 대답합니다. 이 외에 다른 정보는 출력하지 않습니다.",
+                    book, text);
         } else { // if (bookType.compareTo("비문학") == 0) {
             systemText = String.format(
-                    "입력된 %s 이름을 확인하고, 그 %s가 %s의 저자와 일치하는지 판별합니다. 맞다면 '%s와의 대화를 시작할게요' 라고 답하고, 맞지 않다면 '정확하게 이해하지 못했어요. 다시 말씀해 주실 수 있나요?' 라고 대답합니다. 이 외에 다른 정보는 출력하지 않습니다.",
-                    text, text, book, text);
+                    "입력된 이름을 확인하고, '%s' 의 저자와 일치하는지 판별합니다. 저자와 일치한다면 '%s 와의 대화를 시작할게요' 라고 답하고, 일치하지 않다면 '정확하게 이해하지 못했어요. 다시 말씀해 주실 수 있나요?' 라고 대답합니다. 이 외에 다른 정보는 출력하지 않습니다.",
+                    book, text);
         }
 
         String userText = text;
@@ -177,13 +176,14 @@ public class ChatGPTService {
 
         String systemText = "";
         systemText = String.format(
-                "타인이 당신과 대화를 시작할만한 질문 3가지를 다음 형식으로 출력하세요: \r\n" + //
+                "당신이 %s 의 %s 과 대화를 시작할만한 질문 3가지를 다음 형식으로 출력하세요: \r\n" + //
                         "1) 질문\r\n" + //
                         "2) 질문\r\n" + //
                         "3) 질문\r\n" + //
-                        "이 외에 다른 어떤 정보도 출력하지 마세요.");
+                        "이 외에 다른 어떤 정보도 출력하지 마세요.",
+                book, character);
 
-        String userText = text;
+        String userText = "3가지 질문을 추천해줘";
 
         // 이전 대화 step2 HISTORY 무조건 넣어야함
         List<Map<String, String>> previousMessages = new ArrayList<>();
@@ -290,7 +290,7 @@ public class ChatGPTService {
         System.out.println("code:" + code);
 
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("book", text);
+        map.put("book", book);
         map.put("bookType", bookType);
         map.put("character", character);
         map.put("text", gptRespond);

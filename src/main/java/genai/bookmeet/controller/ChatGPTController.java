@@ -12,7 +12,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 
 @RestController
-@RequestMapping("chat")
+@RequestMapping("api/chat")
 public class ChatGPTController {
 
     ChatGPTService chatgptService;
