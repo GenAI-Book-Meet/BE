@@ -11,15 +11,17 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import genai.bookmeet.dto.MessageDto;
+import genai.bookmeet.entity.Chat;
+import genai.bookmeet.entity.Message;
+import genai.bookmeet.repository.ChatRepository;
+import genai.bookmeet.repository.MessageRepository;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 @Service
 public class ChatGPTService {
@@ -28,9 +30,13 @@ public class ChatGPTService {
     private final String API_KEY = "";
 
     private final RestTemplate restTemplate;
+    private final ChatRepository chatRepository;
+    private final MessageRepository messageRepository;
 
-    public ChatGPTService() {
+    public ChatGPTService(ChatRepository chatRepository, MessageRepository messageRepository) {
         this.restTemplate = new RestTemplate();
+        this.chatRepository = chatRepository;
+        this.messageRepository = messageRepository;
     }
 
     public String getStep1(String json) {
@@ -41,6 +47,7 @@ public class ChatGPTService {
         String bookType = "";
         String character = "";
         int code = -500;
+        String msg = "";
 
         String systemText = "입력된 책 제목을 확인하고, 책의 장르를 판별합니다. 장르가 문학이면 '대화할 등장인물의 이름이 무엇인가요?'라고 질문하고, 장르가 비문학이면 '대화할 저자의 이름이 무엇인가요?'라고 질문합니다. 책 제목이 이해되지 않으면 '정확히 이해하지 못했어요. 다시 말씀해 주실 수 있나요?'라고 답합니다. 이 외에 다른 정보는 출력하지 않습니다.";
         String userText = text;
@@ -49,22 +56,15 @@ public class ChatGPTService {
         if (gptRespond.contains("대화할 등장인물의 이름이 무엇인가요?") == true) {
             bookType = "문학";
             code = 100;
+            msg = "성공";
         } else if (gptRespond.contains("대화할 등장인물의 이름이 무엇인가요?") == true) {
             bookType = "비문학";
             code = 100;
+            msg = "성공";
         } else {
             bookType = "";
             code = -100;
-        }
-
-        // TODO userId 이름으로 로컬에 파일 저장 step 1 에서 필요한가?
-        String filePath = userId + ".txt";
-        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
-
-            writer.printf("{user:%s}", text);
-
-        } catch (IOException e) {
-            e.printStackTrace();
+            msg = "책 이름 알수없음";
         }
 
         System.out.println("book:" + text);
@@ -79,6 +79,7 @@ public class ChatGPTService {
         map.put("character", character);
         map.put("text", gptRespond);
         map.put("code", code);
+        map.put("msg", msg);
 
         JSONObject j = new JSONObject(map);
         return j.toString();
@@ -94,6 +95,7 @@ public class ChatGPTService {
         String bookType = jsonObject.getString("bookType");
         String character = "";
         int code = -500;
+        String msg = "";
 
         String systemText = "";
         if (bookType.compareTo("문학") == 0) {
@@ -112,17 +114,25 @@ public class ChatGPTService {
         if (gptRespond.contains("대화를 시작할게요") == true) {
             code = 100;
             character = text;
+            msg = "성공";
         } else {
 
             System.out.println("[Error] chat gpt response: " + gptRespond);
 
             code = -100;
+
+            if (bookType == "문학")
+                msg = "등장인물 알수없음";
+            else if (bookType == "비문학")
+                msg = "저자 알수없음";
+
             Map<String, Object> map = new HashMap<String, Object>();
             map.put("book", book);
             map.put("bookType", bookType);
             map.put("character", character);
             map.put("text", gptRespond);
             map.put("code", code);
+            map.put("msg", msg);
 
             JSONObject j = new JSONObject(map);
             return j.toString();
@@ -140,10 +150,13 @@ public class ChatGPTService {
                     book, character, character, character, character, character);
         }
 
+        // 대화 시작
         userText = "안녕하세요. 자기소개를 해주세요.";
         gptRespond = RequestChatGPT(userId, systemText, userText, new ArrayList<>());
 
-        // TODO 대화내용 DB 저장
+        // 대화 내용 DB 저장
+        SaveMessageToDB(userId, "user", userText);
+        SaveMessageToDB(userId, "assistant", gptRespond);
 
         System.out.println("book:" + book);
         System.out.println("bookType:" + bookType);
@@ -157,6 +170,7 @@ public class ChatGPTService {
         map.put("character", character);
         map.put("text", gptRespond);
         map.put("code", code);
+        map.put("msg", msg);
 
         JSONObject j = new JSONObject(map);
         return j.toString();
@@ -171,8 +185,8 @@ public class ChatGPTService {
         String book = jsonObject.getString("book");
         String bookType = jsonObject.getString("bookType");
         String character = jsonObject.getString("character");
-
         int code = -500;
+        String msg = "";
 
         String systemText = "";
         systemText = String.format(
@@ -185,24 +199,13 @@ public class ChatGPTService {
 
         String userText = "3가지 질문을 추천해줘";
 
-        // 이전 대화 step2 HISTORY 무조건 넣어야함
-        List<Map<String, String>> previousMessages = new ArrayList<>();
-        previousMessages.add(new HashMap<String, String>() {
-            {
-                put("role", "user");
-                put("content", "DB에서 가져와야함");
-            }
-        });
-        previousMessages.add(new HashMap<String, String>() {
-            {
-                put("role", "assistant");
-                put("content", "DB에서 가져와야함");
-            }
-        });
+        // 이전 대화 HISTORY 가져오기
+        List<Map<String, String>> previousMessages = MakePreviousMessages(userId);
 
         String gptRespond = RequestChatGPT(userId, systemText, userText, previousMessages);
 
         code = 100;
+        msg = "성공";
 
         String input = gptRespond.replace("\n", "").replace("\r", "");
         String[] parts = input.split("\\d\\) ");
@@ -211,8 +214,6 @@ public class ChatGPTService {
         String res1 = parts.length > 1 ? parts[1].trim() : "";
         String res2 = parts.length > 2 ? parts[2].trim() : "";
         String res3 = parts.length > 3 ? parts[3].trim() : "";
-
-        // TODO 대화내용 DB 저장
 
         System.out.println("book:" + book);
         System.out.println("bookType:" + bookType);
@@ -224,7 +225,7 @@ public class ChatGPTService {
         System.out.println("code:" + code);
 
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("book", text);
+        map.put("book", book);
         map.put("bookType", bookType);
         map.put("character", character);
         map.put("text", gptRespond);
@@ -232,6 +233,7 @@ public class ChatGPTService {
         map.put("res2", res2);
         map.put("res3", res3);
         map.put("code", code);
+        map.put("msg", msg);
 
         JSONObject j = new JSONObject(map);
         return j.toString();
@@ -246,8 +248,8 @@ public class ChatGPTService {
         String book = jsonObject.getString("book");
         String bookType = jsonObject.getString("bookType");
         String character = jsonObject.getString("character");
-
         int code = -500;
+        String message = "";
 
         String systemText = "";
         if (bookType.compareTo("문학") == 0) {
@@ -262,26 +264,17 @@ public class ChatGPTService {
 
         String userText = text;
 
-        // 이전 대화 HISTORY 무조건 넣어야함 ( for 문으로 이전 대화 모두 넣기 )
-        List<Map<String, String>> previousMessages = new ArrayList<>();
-        previousMessages.add(new HashMap<String, String>() {
-            {
-                put("role", "user");
-                put("content", "DB에서 가져와야함");
-            }
-        });
-        previousMessages.add(new HashMap<String, String>() {
-            {
-                put("role", "assistant");
-                put("content", "DB에서 가져와야함");
-            }
-        });
+        // 이전 대화 HISTORY 가져오기
+        List<Map<String, String>> previousMessages = MakePreviousMessages(userId);
 
         String gptRespond = RequestChatGPT(userId, systemText, userText, previousMessages);
 
         code = 100;
+        message = "성공";
 
-        // TODO 대화내용 DB 저장
+        // 대화 내용 DB 저장
+        SaveMessageToDB(userId, "user", userText);
+        SaveMessageToDB(userId, "assistant", gptRespond);
 
         System.out.println("book:" + book);
         System.out.println("bookType:" + bookType);
@@ -295,10 +288,49 @@ public class ChatGPTService {
         map.put("character", character);
         map.put("text", gptRespond);
         map.put("code", code);
+        map.put("msg", message);
 
         JSONObject j = new JSONObject(map);
         return j.toString();
 
+    }
+
+    private void SaveMessageToDB(String userId, String role, String content) {
+
+        Chat chat = chatRepository.findByUserId(userId);
+        if (chat == null) {
+            chat = Chat.builder().userId(userId).build();
+        }
+
+        Message message = Message.builder()
+                .role(role)
+                .content(content)
+                .chat(chat)
+                .build();
+
+        chat.getMessages().add(message);
+        chatRepository.save(chat);
+    }
+
+    private List<Map<String, String>> MakePreviousMessages(String userId) {
+
+        Chat chat = chatRepository.findByUserId(userId);
+        List<MessageDto> messages = chat.getMessages().stream().map(MessageDto::from).toList();
+
+        List<Map<String, String>> previousMessages = new ArrayList<>();
+        for (int i = 0; i < messages.size(); i++) {
+            String role = messages.get(i).getRole();
+            String content = messages.get(i).getContent();
+
+            previousMessages.add(new HashMap<String, String>() {
+                {
+                    put("role", role);
+                    put("content", content);
+                }
+            });
+        }
+
+        return previousMessages;
     }
 
     private String RequestChatGPT(String userId, String systemPrompt, String userPrompt,
