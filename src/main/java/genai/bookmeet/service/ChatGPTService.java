@@ -190,18 +190,26 @@ public class ChatGPTService {
 
         String systemText = "";
         systemText = String.format(
-                "당신이 %s 의 %s 과 대화를 시작할만한 질문 3가지를 다음 형식으로 출력하세요: \r\n" + //
+                "입력된 이야기에 타인이 당신과 대화를 시작할만한 질문 3가지를 다음 형식으로 출력하세요: \r\n" + //
                         "1) 질문\r\n" + //
                         "2) 질문\r\n" + //
                         "3) 질문\r\n" + //
                         "이 외에 다른 어떤 정보도 출력하지 마세요.",
                 book, character);
 
-        String userText = "3가지 질문을 추천해줘";
-
         // 이전 대화 HISTORY 가져오기
         List<Map<String, String>> previousMessages = MakePreviousMessages(userId);
 
+        String assistantText = "";
+        for (Map<String, String> map : previousMessages) {
+            if ("assistant".equals(map.get("role"))) {
+
+                assistantText = map.get("content");
+                break;
+            }
+        }
+
+        String userText = assistantText;
         String gptRespond = RequestChatGPT(userId, systemText, userText, previousMessages);
 
         code = 100;
