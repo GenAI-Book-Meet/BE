@@ -1,5 +1,8 @@
 package genai.bookmeet.service;
 
+import genai.bookmeet.dto.ChatRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.json.JSONObject;
 
@@ -23,11 +26,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class ChatGPTService {
 
     private final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private final String API_KEY = "";
+    @Value("${openai.api.key}")
+    private String API_KEY;
 
     private final RestTemplate restTemplate;
     private final ChatRepository chatRepository;
@@ -39,11 +44,10 @@ public class ChatGPTService {
         this.messageRepository = messageRepository;
     }
 
-    public String getStep1(String json) {
+    public String getStep1(ChatRequest chatRequest) {
 
-        JSONObject jsonObject = new JSONObject(json);
-        String userId = jsonObject.getString("userId");
-        String text = jsonObject.getString("text");
+        String userId = chatRequest.getUserId();
+        String text = chatRequest.getText();
         String bookType = "";
         String character = "";
         int code = -500;
@@ -57,7 +61,7 @@ public class ChatGPTService {
             bookType = "문학";
             code = 100;
             msg = "성공";
-        } else if (gptRespond.contains("대화할 등장인물의 이름이 무엇인가요?") == true) {
+        } else if (gptRespond.contains("대화할 저자의 이름이 무엇인가요?") == true) {
             bookType = "비문학";
             code = 100;
             msg = "성공";
@@ -86,13 +90,12 @@ public class ChatGPTService {
 
     }
 
-    public String getStep2(String json) {
+    public String getStep2(ChatRequest chatRequest) {
 
-        JSONObject jsonObject = new JSONObject(json);
-        String userId = jsonObject.getString("userId");
-        String text = jsonObject.getString("text");
-        String book = jsonObject.getString("book");
-        String bookType = jsonObject.getString("bookType");
+        String userId = chatRequest.getUserId();
+        String text = chatRequest.getText();
+        String book = chatRequest.getBook();
+        String bookType = chatRequest.getBookType();
         String character = "";
         int code = -500;
         String msg = "";
@@ -177,14 +180,13 @@ public class ChatGPTService {
 
     }
 
-    public String getStep3(String json) {
+    public String getStep3(ChatRequest chatRequest) {
 
-        JSONObject jsonObject = new JSONObject(json);
-        String userId = jsonObject.getString("userId");
-        String text = jsonObject.getString("text");
-        String book = jsonObject.getString("book");
-        String bookType = jsonObject.getString("bookType");
-        String character = jsonObject.getString("character");
+        String userId = chatRequest.getUserId();
+        String text = chatRequest.getText();
+        String book = chatRequest.getBook();
+        String bookType = chatRequest.getBookType();
+        String character = chatRequest.getCharacter();
         int code = -500;
         String msg = "";
 
@@ -248,14 +250,13 @@ public class ChatGPTService {
 
     }
 
-    public String getStep4(String json) {
+    public String getStep4(ChatRequest chatRequest) {
 
-        JSONObject jsonObject = new JSONObject(json);
-        String userId = jsonObject.getString("userId");
-        String text = jsonObject.getString("text");
-        String book = jsonObject.getString("book");
-        String bookType = jsonObject.getString("bookType");
-        String character = jsonObject.getString("character");
+        String userId = chatRequest.getUserId();
+        String text = chatRequest.getText();
+        String book = chatRequest.getBook();
+        String bookType = chatRequest.getBookType();
+        String character = chatRequest.getCharacter();
         int code = -500;
         String message = "";
 

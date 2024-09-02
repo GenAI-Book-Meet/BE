@@ -22,3 +22,9 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+openai:
+  model: gpt-3.5-turbo
+  api:
+    key: ${OPENAI_KEY}
+    url: https://api.openai.com/v1/chat/completions
