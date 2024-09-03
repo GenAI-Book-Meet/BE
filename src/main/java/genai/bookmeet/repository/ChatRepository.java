@@ -16,4 +16,6 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
     @Query("select c from Chat c join fetch c.messages")
     Chat findByUserId(String userId);
 
+    void deleteByUserId(String userId);
+
 }

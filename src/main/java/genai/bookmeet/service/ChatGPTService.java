@@ -12,6 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import genai.bookmeet.dto.MessageDto;
@@ -44,6 +45,7 @@ public class ChatGPTService {
         this.messageRepository = messageRepository;
     }
 
+    @Transactional
     public String getStep1(ChatRequest chatRequest) {
 
         String userId = chatRequest.getUserId();
@@ -52,6 +54,10 @@ public class ChatGPTService {
         String character = "";
         int code = -500;
         String msg = "";
+
+        if (chatRepository.findByUserId(chatRequest.getUserId()) != null) {
+            chatRepository.deleteByUserId(chatRequest.getUserId());
+        }
 
         String systemText = "입력된 책 제목을 확인하고, 책의 장르를 판별합니다. 장르가 문학이면 '대화할 등장인물의 이름이 무엇인가요?'라고 질문하고, 장르가 비문학이면 '대화할 저자의 이름이 무엇인가요?'라고 질문합니다. 책 제목이 이해되지 않으면 '정확히 이해하지 못했어요. 다시 말씀해 주실 수 있나요?'라고 답합니다. 이 외에 다른 정보는 출력하지 않습니다.";
         String userText = text;
@@ -352,7 +358,7 @@ public class ChatGPTService {
         headers.setBearerAuth(API_KEY);
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-3.5-turbo");
+        requestBody.put("model", "gpt-4o");
 
         // 이전 대화 메시지 추가
         List<Map<String, String>> messages = new ArrayList<>(previousMessages);
