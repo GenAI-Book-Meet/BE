@@ -21,6 +21,8 @@ import genai.bookmeet.entity.Message;
 import genai.bookmeet.repository.ChatRepository;
 import genai.bookmeet.repository.MessageRepository;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,16 +50,17 @@ public class ChatGPTService {
     @Transactional
     public String getStep1(ChatRequest chatRequest) {
 
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        String strCurtime = d.format(timestamp).toString();
+        log.info("[step1]" + strCurtime);
+
         String userId = chatRequest.getUserId();
         String text = chatRequest.getText();
         String bookType = "";
         String character = "";
         int code = -500;
         String msg = "";
-
-        if (chatRepository.findByUserId(chatRequest.getUserId()) != null) {
-            chatRepository.deleteByUserId(chatRequest.getUserId());
-        }
 
         String systemText = "입력된 책 제목을 확인하고, 책의 장르를 판별합니다. 장르가 문학이면 '대화할 등장인물의 이름이 무엇인가요?'라고 질문하고, 장르가 비문학이면 '대화할 저자의 이름이 무엇인가요?'라고 질문합니다. 책 제목이 이해되지 않으면 '정확히 이해하지 못했어요. 다시 말씀해 주실 수 있나요?'라고 답합니다. 이 외에 다른 정보는 출력하지 않습니다.";
         String userText = text;
@@ -77,11 +80,11 @@ public class ChatGPTService {
             msg = "책 이름 알수없음";
         }
 
-        System.out.println("book:" + text);
-        System.out.println("bookType:" + bookType);
-        System.out.println("character:" + character);
-        System.out.println("text:" + gptRespond);
-        System.out.println("code:" + code);
+        log.info("book:" + text);
+        log.info("bookType:" + bookType);
+        log.info("character:" + character);
+        log.info("text:" + gptRespond);
+        log.info("code:" + code);
 
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("book", text);
@@ -97,6 +100,11 @@ public class ChatGPTService {
     }
 
     public String getStep2(ChatRequest chatRequest) {
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        String strCurtime = d.format(timestamp).toString();
+        log.info("[step2]" + strCurtime);
 
         String userId = chatRequest.getUserId();
         String text = chatRequest.getText();
@@ -126,7 +134,7 @@ public class ChatGPTService {
             msg = "성공";
         } else {
 
-            System.out.println("[Error] chat gpt response: " + gptRespond);
+            log.info("[Error] chat gpt response: " + gptRespond);
 
             code = -100;
 
@@ -167,11 +175,11 @@ public class ChatGPTService {
         SaveMessageToDB(userId, "user", userText);
         SaveMessageToDB(userId, "assistant", gptRespond);
 
-        System.out.println("book:" + book);
-        System.out.println("bookType:" + bookType);
-        System.out.println("character:" + character);
-        System.out.println("text:" + gptRespond);
-        System.out.println("code:" + code);
+        log.info("book:" + book);
+        log.info("bookType:" + bookType);
+        log.info("character:" + character);
+        log.info("text:" + gptRespond);
+        log.info("code:" + code);
 
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("book", book);
@@ -187,6 +195,11 @@ public class ChatGPTService {
     }
 
     public String getStep3(ChatRequest chatRequest) {
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        String strCurtime = d.format(timestamp).toString();
+        log.info("[step3]" + strCurtime);
 
         String userId = chatRequest.getUserId();
         String text = chatRequest.getText();
@@ -231,14 +244,14 @@ public class ChatGPTService {
         String res2 = parts.length > 2 ? parts[2].trim() : "";
         String res3 = parts.length > 3 ? parts[3].trim() : "";
 
-        System.out.println("book:" + book);
-        System.out.println("bookType:" + bookType);
-        System.out.println("character:" + character);
-        System.out.println("text:" + gptRespond);
-        System.out.println("res1:" + res1);
-        System.out.println("res2:" + res2);
-        System.out.println("res3:" + res3);
-        System.out.println("code:" + code);
+        log.info("book:" + book);
+        log.info("bookType:" + bookType);
+        log.info("character:" + character);
+        log.info("text:" + gptRespond);
+        log.info("res1:" + res1);
+        log.info("res2:" + res2);
+        log.info("res3:" + res3);
+        log.info("code:" + code);
 
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("book", book);
@@ -257,6 +270,11 @@ public class ChatGPTService {
     }
 
     public String getStep4(ChatRequest chatRequest) {
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        String strCurtime = d.format(timestamp).toString();
+        log.info("[step4]" + strCurtime);
 
         String userId = chatRequest.getUserId();
         String text = chatRequest.getText();
@@ -291,11 +309,11 @@ public class ChatGPTService {
         SaveMessageToDB(userId, "user", userText);
         SaveMessageToDB(userId, "assistant", gptRespond);
 
-        System.out.println("book:" + book);
-        System.out.println("bookType:" + bookType);
-        System.out.println("character:" + character);
-        System.out.println("text:" + gptRespond);
-        System.out.println("code:" + code);
+        log.info("book:" + book);
+        log.info("bookType:" + bookType);
+        log.info("character:" + character);
+        log.info("text:" + gptRespond);
+        log.info("code:" + code);
 
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("book", book);
@@ -312,7 +330,7 @@ public class ChatGPTService {
 
     private void SaveMessageToDB(String userId, String role, String content) {
 
-        Chat chat = chatRepository.findByUserId(userId);
+        Chat chat = chatRepository.findByUserIdWithMessages(userId);
         if (chat == null) {
             chat = Chat.builder().userId(userId).build();
         }
@@ -329,7 +347,7 @@ public class ChatGPTService {
 
     private List<Map<String, String>> MakePreviousMessages(String userId) {
 
-        Chat chat = chatRepository.findByUserId(userId);
+        Chat chat = chatRepository.findByUserIdWithMessages(userId);
         List<MessageDto> messages = chat.getMessages().stream().map(MessageDto::from).toList();
 
         List<Map<String, String>> previousMessages = new ArrayList<>();
@@ -358,7 +376,7 @@ public class ChatGPTService {
         headers.setBearerAuth(API_KEY);
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-4o");
+        requestBody.put("model", "gpt-3.5-turbo");
 
         // 이전 대화 메시지 추가
         List<Map<String, String>> messages = new ArrayList<>(previousMessages);
