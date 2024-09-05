@@ -379,7 +379,14 @@ public class ChatGPTService {
         requestBody.put("model", "gpt-3.5-turbo");
 
         // 이전 대화 메시지 추가
-        List<Map<String, String>> messages = new ArrayList<>(previousMessages);
+        // token max(4096) 값 넘어서 server internal error(500) 에러뜨는 거 방지
+        // previousMessages의 대화 마지막 2개만 보내기
+        List<Map<String, String>> messages;
+        if (previousMessages.size() > 2) {
+            messages = new ArrayList<>(previousMessages.subList(previousMessages.size() - 2, previousMessages.size()));
+        } else {
+            messages = new ArrayList<>(previousMessages);
+        }
 
         // 현재 시스템 및 사용자 프롬프트 추가
         messages.add(new HashMap<String, String>() {
